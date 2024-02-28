@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using System.Threading.Tasks;
 using Stripe;
 using System.Data.SqlClient;
+using Newtonsoft.Json.Linq;
 
 namespace StripeExample
 {
@@ -86,12 +87,17 @@ namespace StripeExample
             {
 
                     var paymentUpdate = stripeEvent.Data.Object as PaymentLink;
-                    //paymentUpdate.i
+                    string pID = paymentUpdate.Id;
 
                     using (var connection = new SqlConnection(gsSQLConnWrite))
                     {
                         await connection.OpenAsync();
                         var cmd = new SqlCommand("", connection);
+                        cmd.Parameters.AddWithValue("@StripePaymentID", pID);
+
+                        cmd.CommandText = $"UPDATE GL_TransMain SET ChkClearedYN = 1 WHERE StripePaymentID = @StripePaymentID";
+                        await cmd.ExecuteNonQueryAsync();
+                   
                     }
             }
                 else
